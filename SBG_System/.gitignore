@@ -1,0 +1,149 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+*.egg-info/
+
+# Virtual Environments
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+.venv/
+env_sbg/
+.env
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.project
+.pydevproject
+.settings/
+*.sublime-project
+*.sublime-workspace
+.vim/
+.emacs.d/
+
+# OS Files
+Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# Database & Data
+*.db
+*.sqlite
+*.sqlite3
+*.log
+logs/
+data/*.csv
+!data/README.md
+
+# Model Files (keep only if needed)
+*.pkl
+*.joblib
+*.h5
+*.pth
+checkpoint/
+models/checkpoints/
+model_weights/
+
+# Test & Coverage
+.coverage
+.pytest_cache/
+htmlcov/
+.tox/
+.hypothesis/
+coverage/
+test_reports/
+
+# Build & Distribution
+.egg-info/
+dist/
+build/
+
+# System Files
+*.swp
+*.swo
+*~
+.#*
+\#*\#
+
+# Project specific
+logs/
+*.pid
+test_battery_report.pdf
+temp/
+tmp/
+cache/
+.cache/
+
+# IDE Configuration (local overrides)
+.vscode/settings.json
+.vscode/launch.json
+.idea/*
+!.idea/runConfigurations/
+
+# OS temp files
+*.bak
+*.tmp
+
+# Environment Files
+.env.local
+.env.*.local
+
+# Compiled Files
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.dll
+*.dylib
+
+# Node (if any frontend build)
+node_modules/
+npm-debug.log
+
+# Package Managers
+Pipfile.lock
+poetry.lock
+
+# Documentation builds
+docs/_build/
+site/
+
+# Git Large File Storage
+.git/info/exclude
+
+# Keep repository clean but tracked
+!.gitkeep
+!logs/.gitkeep

@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Battery Guardian - Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      .header {
+        color: white;
+        margin-bottom: 30px;
+        text-align: center;
+      }
+
+      .header h1 {
+        font-size: 2.5em;
+        margin-bottom: 10px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      .controls {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      button {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        background: #667eea;
+        color: white;
+        font-size: 1em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      button:hover {
+        background: #5568d3;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+      }
+
+      button:active {
+        transform: translateY(0);
+      }
+
+      .loading {
+        display: none;
+        color: #667eea;
+        font-weight: 600;
+        margin-left: 20px;
+      }
+
+      .dashboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+      }
+
+      .card {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+      }
+
+      .card:hover {
+        transform: translateY(-4px);
+      }
+
+      .card h2 {
+        font-size: 1.3em;
+        margin-bottom: 20px;
+        color: #333;
+        border-bottom: 2px solid #667eea;
+        padding-bottom: 10px;
+      }
+
+      .status-card {
+        text-align: center;
+        padding: 30px 24px;
+      }
+
+      .risk-score {
+        font-size: 3em;
+        font-weight: 700;
+        margin: 20px 0;
+      }
+
+      .risk-healthy {
+        color: #4caf50;
+      }
+      .risk-caution {
+        color: #ffc107;
+      }
+      .risk-warning {
+        color: #ff5722;
+      }
+      .risk-critical {
+        color: #f44336;
+      }
+
+      .risk-level {
+        font-size: 1.5em;
+        font-weight: 600;
+        margin: 10px 0;
+        padding: 10px;
+        border-radius: 8px;
+      }
+
+      .level-healthy {
+        background: #e8f5e9;
+        color: #2e7d32;
+      }
+      .level-caution {
+        background: #fff3e0;
+        color: #e65100;
+      }
+      .level-warning {
+        background: #ffebee;
+        color: #c62828;
+      }
+      .level-critical {
+        background: #ffcdd2;
+        color: #b71c1c;
+      }
+
+      .metric {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid #eee;
+        font-size: 0.95em;
+      }
+
+      .metric:last-child {
+        border-bottom: none;
+      }
+
+      .metric-label {
+        font-weight: 600;
+        color: #666;
+      }
+
+      .metric-value {
+        color: #333;
+        font-weight: 700;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: #eee;
+        border-radius: 4px;
+        margin: 8px 0;
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #4caf50, #ffc107, #ff5722, #f44336);
+        width: 50%;
+        transition: width 0.3s ease;
+      }
+
+      .battery-list {
+        max-height: 400px;
+        overflow-y: auto;
+      }
+
+      .battery-item {
+        padding: 12px;
+        margin: 8px 0;
+        background: #f5f5f5;
+        border-radius: 8px;
+        border-left: 4px solid #667eea;
+        transition: all 0.3s ease;
+      }
+
+      .battery-item:hover {
+        background: #efefef;
+        border-left-color: #764ba2;
+      }
+
+      .battery-name {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 4px;
+      }
+
+      .battery-status {
+        font-size: 0.85em;
+        color: #666;
+      }
+
+      .alert-box {
+        background: #ffebee;
+        border-left: 4px solid #f44336;
+        padding: 16px;
+        border-radius: 8px;
+        margin: 10px 0;
+        color: #c62828;
+      }
+
+      .alert-box.warning {
+        background: #fff3e0;
+        border-left-color: #ff5722;
+        color: #e65100;
+      }
+
+      .alert-box.caution {
+        background: #fff3e0;
+        border-left-color: #ffc107;
+        color: #e65100;
+      }
+
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+        margin-top: 15px;
+      }
+
+      .summary-item {
+        text-align: center;
+        padding: 15px;
+        background: #f5f5f5;
+        border-radius: 8px;
+      }
+
+      .summary-value {
+        font-size: 1.8em;
+        font-weight: 700;
+        color: #667eea;
+      }
+
+      .summary-label {
+        font-size: 0.85em;
+        color: #666;
+        margin-top: 5px;
+      }
+
+      .details {
+        font-size: 0.9em;
+        color: #666;
+        margin-top: 12px;
+        padding: 12px;
+        background: #f5f5f5;
+        border-radius: 6px;
+        max-height: 200px;
+        overflow-y: auto;
+      }
+
+      .error {
+        background: #ffcdd2;
+        color: #b71c1c;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 10px 0;
+        border-left: 4px solid #f44336;
+      }
+
+      .success {
+        background: #c8e6c9;
+        color: #1b5e20;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 10px 0;
+        border-left: 4px solid #4caf50;
+      }
+
+      @media (max-width: 768px) {
+        .dashboard {
+          grid-template-columns: 1fr;
+        }
+
+        .header h1 {
+          font-size: 1.8em;
+        }
+
+        .controls {
+          flex-direction: column;
+        }
+
+        button {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🔋 Smart Battery Guardian</h1>
+        <p>AI-Powered Battery Health Monitoring System</p>
+      </div>
+
+      <div class="controls">
+        <button onclick="loadRealData()">📊 Load Real Data</button>
+        <button onclick="runAnalysis()">🔍 Run Analysis</button>
+        <button onclick="startRealTimeMonitoring()">
+          🔴 Start Real-Time Monitor
+        </button>
+        <button
+          id="stop-monitoring-btn"
+          onclick="stopRealTimeMonitoring()"
+          style="display: none; background: #d32f2f"
+        >
+          ⚫ Stop Monitoring
+        </button>
+        <button onclick="downloadReport()">📥 Download PDF Report</button>
+        <button onclick="clearData()">🗑️ Clear</button>
+        <div class="loading" id="loading">Processing...</div>
+      </div>
+
+      <div id="messages"></div>
+
+      <!-- Real-Time Monitoring Status -->
+      <div id="monitoring-status" style="display: none">
+        <div
+          class="card"
+          style="
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin-bottom: 20px;
+          "
+        >
+          <h2
+            style="border-bottom-color: rgba(255, 255, 255, 0.3); color: white"
+          >
+            🔴 REAL-TIME DATA INGESTION ACTIVE
+          </h2>
+          <div
+            style="
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+              gap: 15px;
+            "
+          >
+            <div style="text-align: center">
+              <div
+                style="font-size: 2em; font-weight: 700; margin: 10px 0"
+                id="data-points"
+              >
+                0
+              </div>
+              <div style="font-size: 0.9em; opacity: 0.9">
+                Data Points Ingested
+              </div>
+            </div>
+            <div style="text-align: center">
+              <div
+                style="font-size: 2em; font-weight: 700; margin: 10px 0"
+                id="analysis-count"
+              >
+                0
+              </div>
+              <div style="font-size: 0.9em; opacity: 0.9">
+                Analyses Completed
+              </div>
+            </div>
+            <div style="text-align: center">
+              <div
+                style="font-size: 2em; font-weight: 700; margin: 10px 0"
+                id="data-rate"
+              >
+                0
+              </div>
+              <div style="font-size: 0.9em; opacity: 0.9">Points/Second</div>
+            </div>
+            <div style="text-align: center">
+              <div
+                style="font-size: 2em; font-weight: 700; margin: 10px 0"
+                id="uptime"
+              >
+                0s
+              </div>
+              <div style="font-size: 0.9em; opacity: 0.9">Uptime</div>
+            </div>
+            <div style="text-align: center">
+              <div
+                style="font-size: 2em; font-weight: 700; margin: 10px 0"
+                id="battery-count"
+              >
+                0
+              </div>
+              <div style="font-size: 0.9em; opacity: 0.9">
+                Batteries Monitored
+              </div>
+            </div>
+            <div style="text-align: center">
+              <div
+                style="
+                  font-size: 2em;
+                  font-weight: 700;
+                  margin: 10px 0;
+                  color: #4caf50;
+                "
+                id="status-indicator"
+              >
+                ●
+              </div>
+              <div style="font-size: 0.9em; opacity: 0.9">Status: LIVE</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dashboard">
+        <!-- Overall Status -->
+        <div class="card status-card">
+          <h2>Overall Status</h2>
+          <div id="overall-risk-score" class="risk-score">-</div>
+          <div id="overall-risk-level" class="risk-level">No Data</div>
+          <div
+            id="overall-recommendation"
+            style="font-size: 0.9em; color: #666; margin-top: 15px"
+          ></div>
+          <div class="summary-grid" id="summary-grid"></div>
+        </div>
+
+        <!-- Thermal Analysis -->
+        <div class="card">
+          <h2>🌡️ Thermal Analysis</h2>
+          <div id="thermal-content">
+            <p style="color: #999">No data loaded</p>
+          </div>
+        </div>
+
+        <!-- Acoustic Analysis -->
+        <div class="card">
+          <h2>🔊 Acoustic Analysis</h2>
+          <div id="acoustic-content">
+            <p style="color: #999">No data loaded</p>
+          </div>
+        </div>
+
+        <!-- RUL Prediction -->
+        <div class="card">
+          <h2>⏰ RUL Prediction</h2>
+          <div id="rul-content">
+            <p style="color: #999">No data loaded</p>
+          </div>
+        </div>
+
+        <!-- Anomaly Detection -->
+        <div class="card">
+          <h2>⚠️ Anomaly Detection</h2>
+          <div id="anomaly-content">
+            <p style="color: #999">No data loaded</p>
+          </div>
+        </div>
+
+        <!-- Batteries List -->
+        <div class="card">
+          <h2>🔋 Monitored Batteries</h2>
+          <div class="battery-list" id="battery-list">
+            <p style="color: #999">No batteries loaded</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const API_URL = "http://localhost:5000/api";
+
+      function showMessage(text, type = "info") {
+        const messagesDiv = document.getElementById("messages");
+        const message = document.createElement("div");
+        message.className = type;
+        message.textContent = text;
+        messagesDiv.appendChild(message);
+        setTimeout(() => message.remove(), 5000);
+      }
+
+      function setLoading(show) {
+        document.getElementById("loading").display = show ? "block" : "none";
+      }
+
+      async function loadRealData() {
+        try {
+          setLoading(true);
+          showMessage("Loading real battery data...", "info");
+
+          const response = await fetch(`${API_URL}/load-real-data`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ limit: 5 }),
+          });
+
+          const data = await response.json();
+
+          if (data.status === "success") {
+            showMessage(
+              `✓ Loaded data for ${data.batteries.length} batteries`,
+              "success"
+            );
+
+            const summary = `
+                        Thermal: ${data.counts.thermal} |
+                        Acoustic: ${data.counts.acoustic} |
+                        RUL: ${data.counts.rul} |
+                        Anomaly: ${data.counts.anomaly}
+                    `;
+            showMessage(summary, "success");
+          } else {
+            showMessage(`Error: ${data.message}`, "error");
+          }
+        } catch (error) {
+          showMessage(`Connection error: ${error.message}`, "error");
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      async function runAnalysis() {
+        try {
+          setLoading(true);
+          showMessage("Running comprehensive battery analysis...", "info");
+
+          const response = await fetch(`${API_URL}/analyze/battery`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ limit: 3 }),
+          });
+
+          const data = await response.json();
+
+          if (data.status === "success") {
+            displayResults(data);
+            showMessage(
+              `✓ Analysis complete for ${data.assessments.length} batteries`,
+              "success"
+            );
+          } else {
+            showMessage(`Error: ${data.message}`, "error");
+          }
+        } catch (error) {
+          showMessage(`Connection error: ${error.message}`, "error");
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      function displayResults(data) {
+        // Store the API response for PDF generation
+        window.lastApiResponse = data;
+
+        if (!data.assessments || data.assessments.length === 0) return;
+
+        const assessment = data.assessments[0];
+
+        // Overall status
+        const riskScore = assessment.overall.risk_score;
+        document.getElementById("overall-risk-score").textContent =
+          (riskScore * 100).toFixed(1) + "%";
+        document.getElementById("overall-risk-score").className =
+          "risk-score risk-" + assessment.overall.risk_level.toLowerCase();
+
+        const riskLevel = document.getElementById("overall-risk-level");
+        riskLevel.textContent = assessment.overall.risk_level;
+        riskLevel.className =
+          "risk-level level-" + assessment.overall.risk_level.toLowerCase();
+
+        document.getElementById("overall-recommendation").textContent =
+          assessment.overall.recommendation;
+
+        // Summary grid
+        const summaryGrid = document.getElementById("summary-grid");
+        summaryGrid.innerHTML = `
+                <div class="summary-item">
+                    <div class="summary-value">${(
+                      data.summary.avg_risk_score * 100
+                    ).toFixed(1)}%</div>
+                    <div class="summary-label">Avg Risk</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value">${
+                      data.summary.critical_count
+                    }</div>
+                    <div class="summary-label">Critical</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value">${
+                      data.summary.warning_count
+                    }</div>
+                    <div class="summary-label">Warning</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value">${
+                      data.summary.healthy_count
+                    }</div>
+                    <div class="summary-label">Healthy</div>
+                </div>
+            `;
+
+        // Thermal
+        if (assessment.agents.thermal) {
+          const thermal = assessment.agents.thermal;
+          document.getElementById("thermal-content").innerHTML = `
+                    <div class="metric">
+                        <span class="metric-label">Risk Level</span>
+                        <span class="metric-value">${thermal.risk_level}</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Risk Score</span>
+                        <span class="metric-value">${(
+                          thermal.risk_score * 100
+                        ).toFixed(1)}%</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Temperature</span>
+                        <span class="metric-value">${
+                          thermal.temperature?.toFixed(1) || "N/A"
+                        }°C</span>
+                    </div>
+                    ${
+                      thermal.anomalies?.length
+                        ? `<div class="alert-box">${thermal.anomalies.join(
+                            ", "
+                          )}</div>`
+                        : ""
+                    }
+                `;
+        }
+
+        // Acoustic
+        if (assessment.agents.acoustic) {
+          const acoustic = assessment.agents.acoustic;
+          document.getElementById("acoustic-content").innerHTML = `
+                    <div class="metric">
+                        <span class="metric-label">Risk Level</span>
+                        <span class="metric-value">${acoustic.risk_level}</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Risk Score</span>
+                        <span class="metric-value">${(
+                          acoustic.risk_score * 100
+                        ).toFixed(1)}%</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Impedance Rise</span>
+                        <span class="metric-value">${
+                          acoustic.fault_indicators?.impedance_rise?.toFixed(
+                            3
+                          ) || "N/A"
+                        }</span>
+                    </div>
+                    ${
+                      acoustic.anomalies?.length
+                        ? `<div class="alert-box warning">${acoustic.anomalies.join(
+                            ", "
+                          )}</div>`
+                        : ""
+                    }
+                `;
+        }
+
+        // RUL
+        if (assessment.agents.rul) {
+          const rul = assessment.agents.rul;
+          document.getElementById("rul-content").innerHTML = `
+                    <div class="metric">
+                        <span class="metric-label">Risk Level</span>
+                        <span class="metric-value">${rul.risk_level}</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Risk Score</span>
+                        <span class="metric-value">${(
+                          rul.risk_score * 100
+                        ).toFixed(1)}%</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Capacity Fade</span>
+                        <span class="metric-value">${(
+                          rul.capacity_fade * 100
+                        ).toFixed(1)}%</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Predicted RUL</span>
+                        <span class="metric-value">${
+                          rul.predicted_rul_cycles
+                        } cycles</span>
+                    </div>
+                `;
+        }
+
+        // Anomaly
+        if (assessment.agents.anomaly) {
+          const anomaly = assessment.agents.anomaly;
+          document.getElementById("anomaly-content").innerHTML = `
+                    <div class="metric">
+                        <span class="metric-label">Risk Level</span>
+                        <span class="metric-value">${anomaly.risk_level}</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Risk Score</span>
+                        <span class="metric-value">${(
+                          anomaly.risk_score * 100
+                        ).toFixed(1)}%</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Anomalies Detected</span>
+                        <span class="metric-value">${
+                          anomaly.anomalies_detected
+                        }</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Reconstruction Error</span>
+                        <span class="metric-value">${
+                          anomaly.reconstruction_error?.toFixed(4) || "N/A"
+                        }</span>
+                    </div>
+                `;
+        }
+
+        // Batteries list
+        const batteryList = document.getElementById("battery-list");
+        batteryList.innerHTML = data.assessments
+          .map(
+            (a) => `
+                <div class="battery-item">
+                    <div class="battery-name">${a.battery_id}</div>
+                    <div class="battery-status">Risk: ${
+                      a.overall.risk_level
+                    } (${(a.overall.risk_score * 100).toFixed(1)}%)</div>
+                </div>
+            `
+          )
+          .join("");
+      }
+
+      function clearData() {
+        document.getElementById("overall-risk-score").textContent = "-";
+        document.getElementById("overall-risk-level").textContent = "No Data";
+        document.getElementById("overall-recommendation").textContent = "";
+        document.getElementById("summary-grid").innerHTML = "";
+        document.getElementById("thermal-content").innerHTML =
+          '<p style="color: #999;">No data loaded</p>';
+        document.getElementById("acoustic-content").innerHTML =
+          '<p style="color: #999;">No data loaded</p>';
+        document.getElementById("rul-content").innerHTML =
+          '<p style="color: #999;">No data loaded</p>';
+        document.getElementById("anomaly-content").innerHTML =
+          '<p style="color: #999;">No data loaded</p>';
+        document.getElementById("battery-list").innerHTML =
+          '<p style="color: #999;">No batteries loaded</p>';
+        showMessage("Dashboard cleared", "info");
+      }
+
+      async function downloadReport() {
+        const loading = document.getElementById("loading");
+        try {
+          loading.style.display = "inline-block";
+          loading.textContent = "Generating PDF...";
+
+          // Prepare assessment data
+          const lastApiResponse = window.lastApiResponse;
+          if (!lastApiResponse || !lastApiResponse.assessments) {
+            showMessage(
+              "⚠️ No assessment data available. Please run analysis first.",
+              "error"
+            );
+            return;
+          }
+
+          // Send request to generate PDF
+          const response = await fetch(`${API_URL}/generate-report`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              assessments: lastApiResponse.assessments,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(
+              `PDF generation failed: ${response.status} ${response.statusText}`
+            );
+          }
+
+          // Get PDF blob
+          const blob = await response.blob();
+
+          // Create download link
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = `battery_report_${
+            new Date().toISOString().split("T")[0]
+          }.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+
+          showMessage("✓ PDF report downloaded successfully", "success");
+        } catch (error) {
+          console.error("Error downloading report:", error);
+          showMessage(`✗ Failed to download report: ${error.message}`, "error");
+        } finally {
+          loading.style.display = "none";
+          loading.textContent = "Processing...";
+        }
+      }
+
+      function clearData() {
+        document.getElementById("overall-risk-score").textContent = "-";
+        document.getElementById("overall-risk-level").textContent = "No Data";
+        document.getElementById("overall-recommendation").textContent = "";
+        document.getElementById("summary-grid").innerHTML = "";
+        document.getElementById("thermal-content").innerHTML =
+          '<p style="color: #999;">No data loaded</p>';
+        document.getElementById("acoustic-content").innerHTML =
+          '<p style="color: #999;">No data loaded</p>';
+        document.getElementById("rul-content").innerHTML =
+          '<p style="color: #999;">No data loaded</p>';
+        document.getElementById("anomaly-content").innerHTML =
+          '<p style="color: #999;">No data loaded</p>';
+        document.getElementById("battery-list").innerHTML =
+          '<p style="color: #999;">No batteries loaded</p>';
+        showMessage("Dashboard cleared", "info");
+      }
+
+      // Test connection on load
+      window.addEventListener("load", async () => {
+        try {
+          const response = await fetch(`${API_URL}/health`);
+          if (response.ok) {
+            showMessage("✓ Connected to SBG API", "success");
+          } else {
+            showMessage("⚠️ API health check failed", "error");
+          }
+        } catch (error) {
+          showMessage(
+            "⚠️ Cannot connect to API. Is the server running on port 5000?",
+            "error"
+          );
+        }
+      });
+
+      // Real-time Monitoring Functions
+      let monitoringInterval = null;
+
+      async function startRealTimeMonitoring() {
+        try {
+          showMessage(
+            "🔴 Starting real-time data ingestion and monitoring...",
+            "info"
+          );
+
+          const response = await fetch(`${API_URL}/monitoring/start`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+          });
+
+          const data = await response.json();
+
+          if (data.status === "started" || data.status === "already_active") {
+            document.getElementById("monitoring-status").style.display =
+              "block";
+            document.getElementById("stop-monitoring-btn").style.display =
+              "inline-block";
+            showMessage(
+              "✓ Real-time monitoring ACTIVE - Data ingestion started",
+              "success"
+            );
+
+            // Start polling for metrics
+            monitoringInterval = setInterval(updateMonitoringMetrics, 500);
+          } else {
+            showMessage(`Error: ${data.message}`, "error");
+          }
+        } catch (error) {
+          showMessage(`Connection error: ${error.message}`, "error");
+        }
+      }
+
+      async function stopRealTimeMonitoring() {
+        try {
+          if (monitoringInterval) {
+            clearInterval(monitoringInterval);
+          }
+
+          const response = await fetch(`${API_URL}/monitoring/stop`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+          });
+
+          const data = await response.json();
+
+          document.getElementById("monitoring-status").style.display = "none";
+          document.getElementById("stop-monitoring-btn").style.display = "none";
+
+          const metrics = data.final_metrics;
+          showMessage(
+            `✓ Real-time monitoring stopped. Ingested: ${metrics.data_points_ingested} data points | Completed: ${metrics.analyses_completed} analyses`,
+            "success"
+          );
+        } catch (error) {
+          showMessage(`Error stopping monitoring: ${error.message}`, "error");
+        }
+      }
+
+      async function updateMonitoringMetrics() {
+        try {
+          const response = await fetch(`${API_URL}/monitoring/status`);
+          const data = await response.json();
+
+          if (data.status === "success" && data.metrics) {
+            const metrics = data.metrics;
+
+            document.getElementById("data-points").textContent =
+              metrics.data_points_ingested;
+            document.getElementById("analysis-count").textContent =
+              metrics.analyses_completed;
+            document.getElementById("data-rate").textContent =
+              metrics.data_rate;
+            document.getElementById("uptime").textContent =
+              Math.floor(metrics.uptime_seconds) + "s";
+            document.getElementById("battery-count").textContent =
+              metrics.current_batteries.length;
+
+            // Animate status indicator
+            const indicator = document.getElementById("status-indicator");
+            indicator.style.opacity =
+              indicator.style.opacity === "1" ? "0.5" : "1";
+          }
+        } catch (error) {
+          // Silently handle fetch errors during polling
+        }
+      }
+    </script>
+  </body>
+</html>
